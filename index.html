@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="el">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Better Together Network</title>
+<meta name="description" content="Χάρτης συνεργατικών και αλληλέγγυων εγχειρημάτων της Αθήνας: πού να φας, να ψωνίσεις, να πας και να βοηθήσεις.">
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Commissioner:wght@500;700;800&family=Noto+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="leaflet.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="notice" id="notice" hidden><div class="wrap" id="noticeText"></div></div>
+
+<header class="top"><div class="wrap">
+  <a class="brand" href="./">Better Together <span>Network</span></a>
+  <nav class="toplinks"><a href="#map">Χάρτης</a><a href="#about">Σχετικά</a></nav>
+</div></header>
+
+<section class="hero"><div class="wrap">
+  <h1>Πού μπορώ να κατευθύνω τα χρήματα, τον χρόνο και τη συμμετοχή μου;</h1>
+  <p class="lede">Συνεργατικά και αλληλέγγυα εγχειρήματα της Αθήνας. Διάλεξε τι θέλεις να κάνεις, μετά περιοχή και τύπο εγχειρήματος.</p>
+  <div class="intents" id="intents"></div>
+</div></section>
+
+<section class="filters" id="filters"><div class="wrap">
+  <label class="flabel" for="area">Περιοχή</label>
+  <select id="area"><option value="">Όλη η Αθήνα</option></select>
+  <span class="flabel">Τύπος</span>
+  <div class="chips" id="traits"></div>
+</div></section>
+
+<main id="map"><div class="wrap">
+  <div class="crumb" id="crumb"></div>
+  <div class="grid">
+    <div class="mapbox"><div id="leaflet"></div></div>
+    <div class="list" id="list"><div class="empty">Φόρτωση…</div></div>
+  </div>
+</div></main>
+
+<footer id="about"><div class="wrap">
+  <div><b>Μόνο με συναίνεση</b>Κάθε εγχείρημα εμφανίζεται μόνο αφού το ζητήσει και διαλέξει τι θα φαίνεται.</div>
+  <div><b>Χαρακτηριστικά, όχι βαθμοί</b>Δείχνουμε τι δηλώνει κάθε ομάδα. Το ✓ σημαίνει ότι η νομική μορφή έχει ελεγχθεί.</div>
+  <div><b>Χωρίς pay-to-rank</b>Κανείς δεν εμφανίζεται ψηλότερα επειδή πλήρωσε. Κάθε χορηγία αναφέρεται δημόσια.</div>
+  <div><b>Διορθώσεις</b><span id="corrections">Κάθε ομάδα μπορεί να ζητήσει διόρθωση, αλλαγή ορατότητας ή αφαίρεση.</span></div>
+</div></footer>
+
+<div class="scrim" id="scrim" hidden></div>
+<aside class="sheet" id="sheet" hidden role="dialog" aria-modal="true" aria-labelledby="sheetTitle"></aside>
+
+<script src="leaflet.js"></script>
+<script src="papaparse.min.js"></script>
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
