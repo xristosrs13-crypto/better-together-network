@@ -18,14 +18,36 @@
   let DATA = [];
   let map, layer;
 
+  // Σταθερή λίστα κατηγοριών για τα φίλτρα «Τύπος». Κάθε εγχείρημα παίρνει όσες ταιριάζουν
+  // στη νομική μορφή ή στα χαρακτηριστικά του. Η πλήρης νομική μορφή φαίνεται μόνο στο profile.
+  const TYPES = [
+    { t: "Συνεργατικό", re: /συνεταιρ|συνεργατ|κοοπερατ|cooperative|\bcoop/i, legal: true },
+    { t: "ΚοινΣΕπ", re: /κοιν\.?\s?σ\.?\s?επ|κοισπε|κοι\.?σ\.?π\.?ε|social coop/i, legal: true },
+    { t: "Μη κερδοσκοπικό", re: /κερδοσκοπ|αμκε|μκο|σωματεί|non-?profit|ngo/i, legal: true },
+    { t: "Αυτοδιαχειριζόμενο", re: /αυτοδιαχ|αυτοοργαν|κατάληψη|κατειλημ|συνέλευσ|squat/i, legal: true },
+    { t: "Συλλογικότητα", re: /συλλογικότητα|άτυπη|κολεκτίβα|collective|κίνηση πολιτών/i, legal: true },
+    { t: "Δομή αλληλεγγύης", re: /δομή αλληλεγγ|ομάδα αλληλεγγ|στέκι αλληλεγγ|εθελοντική δομή/i, legal: true },
+    { t: "Δημοτικό", re: /δημοτικ|δήμου/i, legal: true },
+    { t: "Τοπικοί παραγωγοί", re: /τοπικοί παραγωγ|μικρ\S* παραγωγ/i },
+    { t: "Fair trade", re: /fair trade|δίκαιο|αλληλέγγυο εμπόριο/i },
+    { t: "Προσβάσιμος χώρος", re: /προσβάσιμ/i },
+    { t: "Φιλοξενεί δράσεις", re: /φιλοξενεί δράσεις/i }
+  ];
+  function classify(legal, rawTraits, events) {
+    const text = [legal, ...rawTraits].join(" ; ").replace(/όχι[^,;)·]*/gi, "");
+    const out = TYPES.filter((x) => x.re.test(text)).map((x) => x.t);
+    if (events && !out.includes("Φιλοξενεί δράσεις")) out.push("Φιλοξενεί δράσεις");
+    return out;
+  }
+  const isLegalType = (t) => (TYPES.find((x) => x.t === t) || {}).legal;
+
   function normalize(r) {
     const cats = String(r.intents || "").split(/[,;]/).map((x) => LABEL_TO_KEY[x.trim().toUpperCase()] || null).filter(Boolean);
     const lat = parseFloat(String(r.lat || "").replace(",", "."));
     const lng = parseFloat(String(r.lng || "").replace(",", "."));
     const vis = /limited/i.test(r.visibility) ? "limited" : "public";
-    const traits = split(r.traits);
     const legal = String(r.legal_form || "").trim();
-    if (legal && !traits.some((t) => legal.toLowerCase().startsWith(t.toLowerCase()))) traits.unshift(legal);
+    const traits = classify(legal, split(r.traits), yes(r.hosts_events));
     return {
       name: String(r.name || "").trim(), area: String(r.area || "").trim(), address: r.address || "",
       ll: isFinite(lat) && isFinite(lng) ? [lat, lng] : null, cats: cats.length ? cats : ["visit"],
@@ -65,7 +87,7 @@
     $("#area").onchange = (e) => { state.area = e.target.value; render(); };
     const counts = {};
     DATA.forEach((d) => d.traits.forEach((t) => (counts[t] = (counts[t] || 0) + 1)));
-    const traits = Object.keys(counts).sort((a, b) => counts[b] - counts[a]).slice(0, 12);
+    const traits = TYPES.map((x) => x.t).filter((t) => counts[t]);
     $("#traits").innerHTML = traits.map((t) => `<button class="chip" data-t="${esc(t)}" aria-pressed="false">${esc(t)}</button>`).join("");
     $("#traits").onclick = (e) => { const b = e.target.closest(".chip"); if (!b) return; state.trait = state.trait === b.dataset.t ? "" : b.dataset.t; render(); };
     if (CFG.CONTACT_EMAIL) $("#corrections").innerHTML += ` Γράψτε στο <span style="user-select:all">${esc(CFG.CONTACT_EMAIL)}</span>.`;
@@ -83,7 +105,7 @@
 
   const filtered = () => DATA.filter((d) => (!state.intent || d.cats.includes(state.intent)) && (!state.area || d.area === state.area) && (!state.trait || d.traits.includes(state.trait)));
   const catTags = (d) => `<div class="cats">${d.cats.map((k) => `<span class="cat" style="--c:var(--${k})">${INTENTS.find((i) => i.k === k).l}</span>`).join("")}</div>`;
-  const traitTags = (d) => `<div class="traits">${d.traits.map((t) => `<span class="trait ${d.verified && d.legal.toLowerCase().startsWith(t.toLowerCase()) ? "v" : ""}">${esc(t)}</span>`).join("")}</div>`;
+  const traitTags = (d) => `<div class="traits">${d.traits.map((t) => `<span class="trait ${d.verified && isLegalType(t) ? "v" : ""}">${esc(t)}</span>`).join("")}</div>`;
   const fmtDate = (s) => { const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s); return m ? `${m[3]}/${m[2]}/${m[1]}` : esc(s); };
   const stale = (s) => { const t = Date.parse(s); return isFinite(t) && (Date.now() - t) / 2.63e9 > (CFG.STALE_MONTHS || 6); };
   const linkHtml = (u) => { if (!u) return ""; const href = /^https?:\/\//.test(u) ? u : /^@/.test(u) ? "" : "https://" + u; return href ? `<a href="${esc(href)}" target="_blank" rel="noopener">${esc(u.replace(/^https?:\/\//, ""))}</a>` : esc(u); };
